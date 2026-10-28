@@ -9,7 +9,7 @@ export const LayerLegend = memo(function LayerLegend({ layer, data, base, opacit
 }) {
   const symbols = useMemo(() => data ? collectFeatureSymbols(layer.name, data.features, base) : [], [data, layer.name, base]);
   return <section className="legend-layer" aria-label={displayLayerName(layer.name)}>
-    {(symbols.length !== 1 || layer.name === RISK_LAYER) && <h3>{displayLayerName(layer.name)}</h3>}
+    {(symbols.length !== 1 || symbols[0].label !== displayLayerName(layer.name) || layer.name === RISK_LAYER) && <h3>{displayLayerName(layer.name)}</h3>}
     {!data && <p>{failed ? 'Warna belum tersedia karena layer gagal dimuat.' : 'Memuat kategori warna…'}</p>}
     {data && !symbols.length && <p>Layer ini tidak memiliki fitur.</p>}
     {symbols.map((symbol) => <div className="legend-item" key={symbol.id}><MapSwatch symbols={[symbol]} opacity={opacity} /><span>{symbol.label}</span></div>)}

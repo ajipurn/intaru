@@ -2,8 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import { gunzipSync } from 'node:zlib';
-import { collectFeatureSymbols, featureName, featureSymbol, layerSymbols, RISK_LAYER, TRANSPORT_LAYER } from './map-symbols.ts';
+import { collectFeatureSymbols, displayLayerName, featureName, featureSymbol, isStructureLayer, layerSymbols, RISK_LAYER, symbolCatalog, TRANSPORT_LAYER } from './map-symbols.ts';
 import { layerStyle, symbolStyle } from './map-style.ts';
+import { STRUCTURE_LAYERS } from './structure-layers.ts';
 import type { Basemap } from './map-symbols.ts';
 import type { DataIndex, GeoData } from '../types.ts';
 
@@ -28,12 +29,34 @@ test('boundary samples adapt to basemaps and transport samples use line symbols'
   }
 });
 
-test('every feature in all 29 layers retains its symbol after optimization and is represented by the legend', {
+test('portal structure layers classify NAMOBJ case-insensitively and draw points with their radius', () => {
+  const settlements = 'Sistem Pusat Permukiman';
+  const centre = featureSymbol(settlements, { NAMOBJ: ' pusat kegiatan  wilayah (PKW) ', REMARK: 'Pusat Kegiatan Wilayah (PKW) Kebumen' });
+  assert.equal(centre.label, 'Pusat Kegiatan Wilayah (PKW)');
+  assert.equal(centre.kind, 'point');
+  assert.deepEqual(symbolStyle(centre, 65), { color: '#fff', weight: 1.5, opacity: 1, fill: true, fillColor: '#1e1b4b', fillOpacity: 0.95, radius: 10 });
+  assert.equal(featureSymbol(settlements, { NAMOBJ: 'Pusat baru' }).id, 'unclassified');
+  assert.equal(featureSymbol(settlements, { NAMOBJ: 'Pusat baru' }).kind, 'point');
+  assert.equal(featureSymbol('Sistem Jaringan Sumber Daya Air', { NAMOBJ: 'Jaringan Irigasi Sekunder' }).dashArray, '6,4');
+  assert.equal(displayLayerName(settlements), 'Pusat permukiman');
+  assert.ok(isStructureLayer(TRANSPORT_LAYER) && isStructureLayer(settlements) && !isStructureLayer(RISK_LAYER));
+});
+
+test('structure symbols are distinct within each portal layer', () => {
+  for (const layer of STRUCTURE_LAYERS) {
+    const symbols = symbolCatalog(layer.name).filter((symbol) => symbol.id !== 'unclassified');
+    assert.equal(new Set(symbols.map((symbol) => symbol.id)).size, symbols.length, layer.name);
+    assert.equal(new Set(symbols.map((symbol) => `${symbol.color}|${symbol.dashArray}`)).size, symbols.length, layer.name);
+    assert.ok(symbols.every((symbol) => symbol.kind === layer.kind), layer.name);
+  }
+});
+
+test('every feature in all 39 layers retains its symbol after optimization and is represented by the legend', {
   skip: !existsSync('public/data/index.json') && 'Dataset is local-only; run pnpm data:export and pnpm data:prepare to audit all features.',
 }, () => {
   const index = JSON.parse(readFileSync('public/data/index.json', 'utf8')) as DataIndex;
   let featureCount = 0;
-  assert.equal(index.layers.length, 29);
+  assert.equal(index.layers.length, 39);
   for (const layer of index.layers) {
     const raw = JSON.parse(gunzipSync(readFileSync(`public${layer.asset_path}`)).toString('utf8')) as GeoData;
     const display = JSON.parse(gunzipSync(readFileSync(`public${layer.display_asset_path}`)).toString('utf8')) as GeoData;
@@ -57,5 +80,6 @@ test('every feature in all 29 layers retains its symbol after optimization and i
     }
     featureCount += raw.features.length;
   }
-  assert.equal(featureCount, 54886);
+  // 54,886 from the source application and 5,131 from the Portal Tata Ruang.
+  assert.equal(featureCount, 60017);
 });

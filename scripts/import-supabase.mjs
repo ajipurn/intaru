@@ -11,6 +11,11 @@ const root = 'public/data';
 const index = JSON.parse(await readFile(join(root, 'index.json'), 'utf8'));
 // --assets-only refreshes layer metadata and Storage files without re-importing features.
 const assetsOnly = process.argv.includes('--assets-only');
+// --only <prefix> imports just the layers whose ID starts with the prefix, without villages or the mask.
+const onlyIndex = process.argv.indexOf('--only');
+const only = onlyIndex >= 0 ? process.argv[onlyIndex + 1] : undefined;
+if (onlyIndex >= 0 && (!only || only.startsWith('--'))) throw new Error('--only requires a layer ID prefix.');
+if (only && !index.layers.some((layer) => layer.id.startsWith(only))) throw new Error(`No prepared layer ID starts with ${only}; run pnpm data:prepare.`);
 function check(result, context) { if (result.error) throw new Error(`${context}: ${result.error.message}`); return result.data; }
 async function upload(path, cacheControl = '3600') {
   const contents = await readFile(join(root, path));
@@ -22,14 +27,17 @@ const storagePath = (assetPath) => assetPath.replace(/^\/data\//, '');
 // Verify the migration is present before uploading anything.
 check(await supabase.from('map_layers').select('id, display_asset_path, symbol_ids').limit(1), 'Check migration');
 const villages = JSON.parse(await readFile(join(root, 'villages.json'), 'utf8'));
-if (!assetsOnly) check(await supabase.from('villages').upsert(villages.map((item) => ({ name: item.DESAKEL, district: item.KECAMATAN })), { onConflict: 'name,district' }), 'Import villages');
+if (!assetsOnly && !only) check(await supabase.from('villages').upsert(villages.map((item) => ({ name: item.DESAKEL, district: item.KECAMATAN })), { onConflict: 'name,district' }), 'Import villages');
 
+let imported = 0;
 for (let order = 0; order < index.layers.length; order++) {
   const layer = index.layers[order];
+  if (only && !layer.id.startsWith(only)) continue;
+  imported++;
   const { contents: compressed, url: assetUrl } = await upload(storagePath(layer.asset_path));
   // Display files are named by content hash, so browsers may cache them for a year.
   const display = layer.display_asset_path ? await upload(storagePath(layer.display_asset_path), '31536000') : null;
-  check(await supabase.from('map_layers').upsert({ id: layer.id, name: layer.name, category: layer.category, feature_count: layer.feature_count, bounds: layer.bounds, asset_path: assetUrl, display_asset_path: display?.url ?? null, symbol_ids: layer.symbol_ids ?? null, sort_order: order, imported_at: index.exportedAt }), `Import layer ${layer.name}`);
+  check(await supabase.from('map_layers').upsert({ id: layer.id, name: layer.name, category: layer.category, feature_count: layer.feature_count, bounds: layer.bounds, asset_path: assetUrl, display_asset_path: display?.url ?? null, symbol_ids: layer.symbol_ids ?? null, sort_order: order, imported_at: layer.exported_at ?? index.exportedAt }), `Import layer ${layer.name}`);
   if (assetsOnly) {
     console.log(`Uploaded ${layer.name}.`);
     continue;
@@ -53,7 +61,11 @@ for (let order = 0; order < index.layers.length; order++) {
   check(await supabase.from('map_features').delete().eq('layer_id', layer.id).gte('source_index', data.features.length), `Remove obsolete indices ${layer.name}`);
   console.log(`Imported ${layer.name}: ${data.features.length} features.`);
 }
-await upload('kebumen-mask.geojson.gz');
-console.log(assetsOnly
-  ? `Uploaded assets for ${index.layers.length} layers and the region mask.`
-  : `Imported ${index.layers.length} layers, ${villages.length} villages and the region mask.`);
+if (only) {
+  console.log(`${assetsOnly ? 'Uploaded assets for' : 'Imported'} ${imported} layers whose ID starts with ${only}.`);
+} else {
+  await upload('kebumen-mask.geojson.gz');
+  console.log(assetsOnly
+    ? `Uploaded assets for ${index.layers.length} layers and the region mask.`
+    : `Imported ${index.layers.length} layers, ${villages.length} villages and the region mask.`);
+}

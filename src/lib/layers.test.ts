@@ -13,8 +13,10 @@ test('groups follow the sidebar order and merge LSD with LP2B', () => {
   assert.equal(groups[2].defaultOpen, true);
 });
 
-test('selected layers keep catalogue order and skip unknown IDs', () => {
+test('selected layers follow the sidebar groups, then catalogue order, and skip unknown IDs', () => {
   assert.deepEqual(pickLayers(catalog, ['kecamatan', 'missing', 'lsd']).map((item) => item.id), ['lsd', 'kecamatan']);
+  const appended = [...catalog, layer('energi', 'strukturRuang'), layer('roads', 'strukturRuang'), layer('unknown', 'new-source')];
+  assert.deepEqual(pickLayers(appended, ['unknown', 'energi', 'kecamatan', 'roads', 'mangrove']).map((item) => item.id), ['mangrove', 'energi', 'roads', 'kecamatan', 'unknown']);
 });
 
 test('toggling adds without duplicates and removes every given ID', () => {
@@ -22,7 +24,7 @@ test('toggling adds without duplicates and removes every given ID', () => {
   assert.deepEqual(toggleLayerIds(['a', 'b', 'c'], ['a', 'c'], false), ['b']);
 });
 
-test('only boundaries and roads are drawn without area opacity', () => {
+test('only boundaries and structure networks are drawn without area opacity', () => {
   assert.equal(isAreaLayer({ category: 'pola-ruang' }), true);
   assert.equal(isAreaLayer({ category: 'administrasi' }), false);
   assert.equal(isAreaLayer({ category: 'strukturRuang' }), false);

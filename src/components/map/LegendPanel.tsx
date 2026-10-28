@@ -2,10 +2,12 @@ import type { UseQueryResult } from "@tanstack/react-query";
 import type { Hazard } from "../../lib/hazards";
 import { isAreaLayer } from "../../lib/layers";
 import type { Basemap } from "../../lib/map-symbols";
+import { structureLayer } from "../../lib/structure-layers";
 import type { GeoData, Layer } from "../../types";
 import { PanelHeading } from "../ui/PanelHeading";
 import { HazardLegend } from "./HazardLegend";
 import { LayerLegend } from "./LayerLegend";
+import { TataruangSource } from "./TataruangSource";
 
 export function LegendPanel({ layers, hazard, queries, base, opacity, onClose }: {
   layers: Layer[];
@@ -29,6 +31,12 @@ export function LegendPanel({ layers, hazard, queries, base, opacity, onClose }:
           opacity={opacity}
         />
       ))}
+      {layers.some((layer) => structureLayer(layer.name)) && (
+        <p className="legend-note">
+          Titik dan garis struktur ruang dapat diklik untuk melihat nama dan jenisnya.
+          <TataruangSource />
+        </p>
+      )}
       {layers.some(isAreaLayer) && (
         <p className="legend-note">
           Opasitas kawasan {opacity}%. Warna tampilan menyatu dengan peta

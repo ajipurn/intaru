@@ -1,14 +1,18 @@
 import type { GeoJsonProperties } from 'geojson';
 import type { LocationMatch } from '../types.ts';
-import { displayLayerName, DISTRICT_LAYER, featureName, featureSymbol, VILLAGE_LAYER } from './map-symbols.ts';
+import { displayLayerName, DISTRICT_LAYER, featureName, featureSymbol, isStructureLayer, VILLAGE_LAYER } from './map-symbols.ts';
 import type { Basemap, MapSymbol } from './map-symbols.ts';
+import { structureLayer, TATARUANG_SOURCE } from './structure-layers.ts';
 
 export type LocationResult = {
   key: string;
   title: string;
   detail?: string;
+  /** Name of a clicked point or line, such as a road, substation, or operator. */
+  remark?: string;
   district?: string;
   symbol: MapSymbol;
+  source?: typeof TATARUANG_SOURCE;
 };
 
 const text = (value: unknown) => typeof value === 'string' ? value.trim().replace(/\s+/g, ' ') : '';
@@ -62,13 +66,16 @@ export function getLocationResults(matches: LocationMatch[], base: Basemap = 'st
       : text(featureName(properties, title));
     const detail = canonical(name) === canonical(title) ? undefined : name || undefined;
     if (canonical(district) === canonical(detail ?? title)) district = undefined;
+    // Area layers keep legal references or "Tidak Ada" in REMARK; only structure features are named there.
+    const note = isStructureLayer(layer_name) ? property(properties, ['REMARK']) : '';
+    const remark = note && canonical(note) !== canonical(detail ?? title) ? note : undefined;
     const symbol = featureSymbol(layer_name, properties, base);
     // Neighbouring fragments and a clicked road can produce the same visible
     // result. Keep distinct layers, classifications and districts separate.
-    const key = JSON.stringify([layer_id, canonical(title), canonical(detail), canonical(district), symbol.id]);
+    const key = JSON.stringify([layer_id, canonical(title), canonical(detail), canonical(remark), canonical(district), symbol.id]);
     if (seen.has(key)) continue;
     seen.add(key);
-    results.push({ key, title, detail, district, symbol });
+    results.push({ key, title, detail, remark, district, symbol, source: structureLayer(layer_name) ? TATARUANG_SOURCE : undefined });
   }
   return results;
 }

@@ -1,9 +1,10 @@
 import type { Feature, GeoJsonProperties } from 'geojson';
 import type { Layer } from '../types.ts';
+import { structureLayer } from './structure-layers.ts';
 
 export const BASEMAP_IDS = ['streets', 'satellite', 'topography'] as const;
 export type Basemap = (typeof BASEMAP_IDS)[number];
-export type MapSymbol = { id: string; label: string; color: string; kind: 'area' | 'line'; dashArray?: string; haloColor?: string };
+export type MapSymbol = { id: string; label: string; color: string; kind: 'area' | 'line' | 'point'; dashArray?: string; haloColor?: string; radius?: number };
 export const RISK_LAYER = 'Kawasan Rawan Bencana';
 export const TRANSPORT_LAYER = 'SISTEM JARINGAN TRANSPORTASI LN';
 export const DISTRICT_LAYER = 'Batas Kecamatan';
@@ -28,7 +29,7 @@ const colors: Record<string, string> = {
 };
 export const layerColor = (name: string) => colors[name] ?? '#64748B';
 export function displayLayerName(name: string) {
-  return ({ 'SHP LSD': 'Lahan Sawah Dilindungi (LSD)', 'LP2B KEBUMEN 2026 WGS84': 'Lahan Pertanian Pangan Berkelanjutan (LP2B)', 'SISTEM JARINGAN TRANSPORTASI LN': 'Jaringan transportasi' })[name] ?? name;
+  return structureLayer(name)?.label ?? ({ 'SHP LSD': 'Lahan Sawah Dilindungi (LSD)', 'LP2B KEBUMEN 2026 WGS84': 'Lahan Pertanian Pangan Berkelanjutan (LP2B)', 'SISTEM JARINGAN TRANSPORTASI LN': 'Jaringan transportasi' })[name] ?? name;
 }
 
 const riskTypes = [
@@ -49,13 +50,18 @@ const roadSymbols: MapSymbol[] = [
   { id: 'road-toll', label: 'Jalan Tol', color: '#FF8C00', kind: 'line' },
   { id: 'rail', label: 'Jaringan Jalur Kereta Api Antarkota', color: '#FF8C00', kind: 'line' },
 ];
-function unknownSymbol(kind: 'area' | 'line'): MapSymbol {
+function unknownSymbol(kind: MapSymbol['kind']): MapSymbol {
   return { id: 'unclassified', label: 'Klasifikasi belum tersedia', color: '#64748b', kind };
 }
 function boundary(name: string) { return name === DISTRICT_LAYER || name === VILLAGE_LAYER; }
+/** Point and line networks of the structure plan, identified by clicking the feature itself. */
+export const isStructureLayer = (name: string) => name === TRANSPORT_LAYER || Boolean(structureLayer(name));
+const matchKey = (value: unknown) => String(value ?? '').normalize('NFKC').trim().replace(/\s+/g, ' ').toLocaleLowerCase('id-ID');
 export function symbolCatalog(name: string, base: Basemap = 'streets'): MapSymbol[] {
   if (name === RISK_LAYER) return [...riskSymbols, unknownSymbol('area')];
   if (name === TRANSPORT_LAYER) return [...roadSymbols, unknownSymbol('line')];
+  const structure = structureLayer(name);
+  if (structure) return [...structure.symbols, unknownSymbol(structure.kind)];
   const isBoundary = boundary(name);
   const village = name === VILLAGE_LAYER;
   return [{ id: name, label: displayLayerName(name), color: isBoundary && base === 'satellite' ? village ? '#fde68a' : '#f8fafc' : layerColor(name),
@@ -83,6 +89,12 @@ export function featureSymbol(name: string, properties: GeoJsonProperties, base:
     const value = featureName(properties);
     const id = /arteri/i.test(value) ? 'road-arterial' : /kolektor/i.test(value) ? 'road-collector' : /lokal/i.test(value) ? 'road-local' : /jalan tol/i.test(value) ? 'road-toll' : /kereta api/i.test(value) ? 'rail' : 'unclassified';
     return roadSymbols.find((symbol) => symbol.id === id) ?? unknownSymbol('line');
+  }
+  const structure = structureLayer(name);
+  if (structure) {
+    // Portal categories are the RTRW object names in NAMOBJ.
+    const key = matchKey(properties?.NAMOBJ);
+    return structure.symbols.find((symbol) => matchKey(symbol.label) === key) ?? unknownSymbol(structure.kind);
   }
   return symbolCatalog(name, base)[0];
 }

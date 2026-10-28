@@ -76,6 +76,22 @@ test('clicked transport and RPC matches share one result with the correct line s
   assert.equal(results[0].symbol.color, '#FF5100');
 });
 
+test('structure features show their remark and portal layers carry their source', () => {
+  const [substation] = getLocationResults([{ layer_id: 'tataruang-struktur-1', layer_name: 'Sistem Infrastruktur Energi', properties: { NAMOBJ: 'Gardu Listrik', REMARK: 'GI 150 kV Gombong' } }]);
+  assert.equal(substation.title, 'Infrastruktur energi');
+  assert.equal(substation.detail, 'Gardu Listrik');
+  assert.equal(substation.remark, 'GI 150 kV Gombong');
+  assert.equal(substation.symbol.kind, 'point');
+  assert.equal(substation.source?.label, 'Portal Tata Ruang Kabupaten Kebumen');
+  const [road] = getLocationResults([{ layer_id: 'roads', layer_name: TRANSPORT_LAYER, properties: { NAMOBJ: 'Jalan Lokal Primer', REMARK: 'PENIRON - KARANGGAYAM' } }]);
+  assert.equal(road.remark, 'PENIRON - KARANGGAYAM');
+  assert.equal(road.source, undefined);
+  const [empty] = getLocationResults([{ layer_id: 'tataruang-struktur-8', layer_name: 'Sistem Infrastruktur Telekomunikasi', properties: { NAMOBJ: 'Jaringan Bergerak Seluler', REMARK: 'Tidak Ada' } }]);
+  assert.equal(empty.remark, undefined);
+  const [forest] = getLocationResults([{ ...crop, properties: { NAMOBJ: 'Kawasan Tanaman Pangan', REMARK: 'SK.6605/MENLHK-PKTL/KUH/PLA.2/10/2021' } }]);
+  assert.equal(forest.remark, undefined);
+});
+
 test('missing properties do not create empty or repeated detail lines', () => {
   const [result] = getLocationResults([{ ...crop, properties: null }]);
   assert.equal(result.detail, undefined);

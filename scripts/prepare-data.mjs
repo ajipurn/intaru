@@ -27,12 +27,23 @@ try {
 if (!manifest.completed || manifest.mode !== 'all-public-map-data') {
   throw new Error('Full source export is incomplete; run pnpm data:export.');
 }
+// Struktur ruang layers from the Portal Tata Ruang follow the Apps Script layers.
+const resources = manifest.resources.filter((item) => item.file.endsWith('.geojson')).map((resource) => ({ directory: source, resource }));
+const portalDirectory = join(source, 'tataruang');
+try {
+  const portal = JSON.parse(await readFile(join(portalDirectory, 'manifest.json'), 'utf8'));
+  if (!portal.completed) throw new Error('Portal Tata Ruang export is incomplete; run pnpm data:export:tataruang.');
+  resources.push(...portal.resources.map((resource) => ({ directory: portalDirectory, resource })));
+} catch (error) {
+  if (error.code !== 'ENOENT') throw error;
+  console.warn('Portal Tata Ruang layers are absent; run pnpm data:export:tataruang to include them.');
+}
 await mkdir(join(output, 'geojson'), { recursive: true });
 await mkdir(join(output, 'display'), { recursive: true });
 const layers = [];
-for (const resource of manifest.resources.filter((item) => item.file.endsWith('.geojson'))) {
+for (const { directory, resource } of resources) {
   let contents, compressed;
-  try { contents = await readFile(join(source, resource.file)); }
+  try { contents = await readFile(join(directory, resource.file)); }
   catch (error) {
     if (error.code !== 'ENOENT') throw error;
     compressed = await readFile(join(output, resource.file + '.gz'));
@@ -84,6 +95,8 @@ for (const resource of manifest.resources.filter((item) => item.file.endsWith('.
     symbol_ids: collectFeatureSymbols(resource.name, original.features).map((symbol) => symbol.id),
     feature_count: resource.features,
     bounds: resource.bounds,
+    // Separate sources are retrieved at different times; the importer records this per layer.
+    ...(resource.retrievedAt && { exported_at: resource.retrievedAt }),
   });
 }
 const retained = new Set(layers.map((layer) => layer.display_asset_path.split('/').at(-1)));

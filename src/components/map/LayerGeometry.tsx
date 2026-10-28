@@ -3,7 +3,7 @@ import type { RefObject } from "react";
 import { useMap } from "react-leaflet";
 import L from "leaflet";
 import { useLatestRef } from "../../hooks/use-latest-ref";
-import { ADMIN_CATEGORY, TRANSPORT_CATEGORY } from "../../lib/layers";
+import { ADMIN_CATEGORY, STRUCTURE_CATEGORY } from "../../lib/layers";
 import { layerPane, PANES } from "../../lib/map-panes";
 import { boundaryHaloStyle, layerStyle } from "../../lib/map-style";
 import type { Basemap } from "../../lib/map-symbols";
@@ -13,6 +13,18 @@ function applyStyle(group: L.GeoJSON | null, style: L.PathOptions | L.StyleFunct
   if (!group) return;
   group.options.style = style;
   group.setStyle(style);
+}
+
+// Structure points and thin lines share one canvas with a wider hit area, so
+// they can be tapped on a phone. One renderer per map keeps them in one stack.
+const structureRenderers = new WeakMap<L.Map, L.Canvas>();
+function structureRenderer(map: L.Map) {
+  let renderer = structureRenderers.get(map);
+  if (!renderer) {
+    renderer = L.canvas({ pane: PANES.structure, tolerance: 5 });
+    structureRenderers.set(map, renderer);
+  }
+  return renderer;
 }
 
 // Geometry stays mounted when panels, search, or identification state change.
@@ -48,23 +60,32 @@ export const LayerGeometry = memo(function LayerGeometry({
           }).addTo(map)
         : null;
     haloGroup.current = halo;
-    const geometry = L.geoJSON(undefined, {
-      pane: layerPane(layer),
+    const structure = layer.category === STRUCTURE_CATEGORY;
+    const pane = layerPane(layer);
+    const renderer = structure ? structureRenderer(map) : undefined;
+    const options: L.GeoJSONOptions & { renderer?: L.Renderer } = {
+      pane,
+      renderer,
       style: layerStyle(layer, appearance.current.opacity, appearance.current.base),
       bubblingMouseEvents: false,
+      // Canvas circles take their radius and colours from the layer style.
+      pointToLayer: (_feature, latlng) => L.circleMarker(latlng, { pane, renderer, bubblingMouseEvents: false }),
       onEachFeature: (feature, item) =>
         item.on("click", (event: L.LeafletMouseEvent) => {
           if (!inspectRef.current) return;
           onSelect({
             ...event.latlng,
-            // Roads are thin lines, so report the clicked road itself.
-            clicked:
-              layer.category === TRANSPORT_CATEGORY
-                ? { layer_id: layer.id, layer_name: layer.name, properties: feature.properties }
-                : undefined,
+            // Points and thin lines are not found by area identification, so report the clicked feature.
+            clicked: structure ? { layer_id: layer.id, layer_name: layer.name, properties: feature.properties } : undefined,
           });
         }),
-    }).addTo(map);
+    };
+    const geometry = L.geoJSON(undefined, options).addTo(map);
+    // Keep lines beneath points however the layers finish loading; the canvas
+    // also gives clicks to the topmost feature.
+    if (structure) geometry.on("layeradd", ({ layer: item }) => {
+      if (!(item instanceof L.CircleMarker)) (item as L.Path).bringToBack();
+    });
     group.current = geometry;
     let cursor = 0,
       frame = 0,

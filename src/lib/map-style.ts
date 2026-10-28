@@ -1,11 +1,14 @@
 import type { Feature } from 'geojson';
-import type { PathOptions } from 'leaflet';
+import type { CircleMarkerOptions, PathOptions } from 'leaflet';
 import type { Layer } from '../types.ts';
 import { DISTRICT_LAYER, featureSymbol, VILLAGE_LAYER } from './map-symbols.ts';
 import type { Basemap, MapSymbol } from './map-symbols.ts';
 
+export const POINT_RADIUS = 5;
 // Used by both the Leaflet paths and the SVG legend samples.
-export function symbolStyle(symbol: MapSymbol, opacity: number): PathOptions {
+export function symbolStyle(symbol: MapSymbol, opacity: number): CircleMarkerOptions {
+  // Points keep full colour at any area opacity; the white ring separates them from the basemap.
+  if (symbol.kind === 'point') return { color: '#fff', weight: 1.5, opacity: 1, fill: true, fillColor: symbol.color, fillOpacity: 0.95, radius: symbol.radius ?? POINT_RADIUS };
   const village = symbol.id === VILLAGE_LAYER;
   const administrative = village || symbol.id === DISTRICT_LAYER;
   return {

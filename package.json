@@ -12,12 +12,14 @@
     "build": "pnpm data:prepare && pnpm build:app",
     "build:app": "tsc -b && vite build",
     "preview": "vite preview --host 127.0.0.1",
-    "test": "node --experimental-strip-types --test src/lib/geo.test.ts src/lib/map-symbols.test.ts src/lib/map-preferences.test.ts src/lib/location-results.test.ts src/lib/layers.test.ts src/lib/region-search.test.ts src/lib/facilities.test.ts src/lib/hazards.test.ts src/lib/region-view.test.ts src/lib/weather.test.ts server/session.test.ts scripts/export-apps-script.test.mjs scripts/display-geometry.test.mjs scripts/population.test.mjs scripts/bps-table.test.mjs",
-    "data:export": "node scripts/export-apps-script.mjs --all",
+    "test": "node --experimental-strip-types --test src/lib/geo.test.ts src/lib/map-symbols.test.ts src/lib/map-preferences.test.ts src/lib/location-results.test.ts src/lib/layers.test.ts src/lib/region-search.test.ts src/lib/facilities.test.ts src/lib/hazards.test.ts src/lib/region-view.test.ts src/lib/weather.test.ts server/session.test.ts scripts/export-apps-script.test.mjs scripts/export-tataruang.test.mjs scripts/display-geometry.test.mjs scripts/population.test.mjs scripts/bps-table.test.mjs",
+    "data:export": "node scripts/export-apps-script.mjs --all && pnpm data:export:tataruang",
+    "data:export:tataruang": "node --experimental-strip-types scripts/export-tataruang.mjs",
     "data:enrich": "node --experimental-strip-types scripts/export-enrichment.mjs",
     "data:prepare": "node --experimental-strip-types scripts/prepare-data.mjs && node --experimental-strip-types scripts/prepare-enrichment.mjs",
     "data:import": "node --env-file=.env scripts/import-supabase.mjs",
     "data:import:assets": "node --env-file=.env scripts/import-supabase.mjs --assets-only",
+    "data:import:tataruang": "node --env-file=.env scripts/import-supabase.mjs --only tataruang-struktur-",
     "data:import:enrichment": "node --env-file=.env scripts/import-enrichment.mjs"
   },
   "dependencies": {

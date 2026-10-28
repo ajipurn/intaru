@@ -11,6 +11,7 @@ import { PanelHeading } from "../ui/PanelHeading";
 import { Spinner } from "../ui/Spinner";
 import { NearbyFacilities, RegionSummary, WeatherForecast } from "./LocationEnrichment";
 import { MapSwatch } from "./MapSwatch";
+import { TataruangSource } from "./TataruangSource";
 
 /** Identifies the clicked point against the active layers. */
 export function LocationPanel({ point, layers, regionLayers, base, opacity, onClose }: {
@@ -64,6 +65,7 @@ export function LocationPanel({ point, layers, regionLayers, base, opacity, onCl
             <div>
               <strong>{result.title}</strong>
               {result.detail && <span>{result.detail}</span>}
+              {result.remark && <span>{result.remark}</span>}
               {result.district && <small>{result.district}</small>}
             </div>
           </div>
@@ -75,6 +77,7 @@ export function LocationPanel({ point, layers, regionLayers, base, opacity, onCl
               : "Aktifkan layer untuk memeriksa informasi kawasan."}
           </p>
         )}
+        {results.some((result) => result.source) && <TataruangSource />}
       </div>
       {regionLayers.length > 0 && <RegionSummary region={region} />}
       <WeatherForecast village={region.village} />
