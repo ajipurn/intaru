@@ -109,9 +109,15 @@ Build menggunakan dua variabel `VITE_SUPABASE_*` dari konfigurasi project. Servi
 
 1. Pastikan seluruh migration sudah diterapkan dan `pnpm data:import` (atau `pnpm data:import:assets`) serta `pnpm data:import:enrichment` sudah dijalankan.
 2. Hubungkan repository GitHub ke project Vercel.
-3. Isi `VITE_SUPABASE_URL` dan `VITE_SUPABASE_PUBLISHABLE_KEY` pada Environment Variables project. Jangan menambahkan service role key.
+3. Isi `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, dan `INTARU_PASSWORD` pada Environment Variables project. Jangan menambahkan service role key.
 
 Branch `main` menghasilkan deployment produksi; branch lain menghasilkan preview.
+
+### Password situs
+
+`middleware.ts` meminta sesi untuk setiap halaman dan aset, kecuali `/login.html`, `/api/login`, dan ikon. Form login mengirim password ke `api/login.ts`, yang membandingkannya dengan `INTARU_PASSWORD` lalu memasang cookie `HttpOnly` bertanda tangan HMAC selama 30 hari. Password menjadi kunci tanda tangan, sehingga mengganti password mengeluarkan semua sesi. Tombol **Keluar** di footer menghapus cookie. Tanpa `INTARU_PASSWORD`, deployment menjawab 503 dan tidak menampilkan apa pun.
+
+Password tidak memakai prefiks `VITE_` agar tidak masuk ke bundle browser. Gerbang ini hanya berjalan di Vercel dan `vercel dev`; `pnpm dev` tidak meminta password. Gerbang melindungi aplikasi, bukan data Supabase: tabel dan Storage tetap dapat dibaca siapa pun yang memegang publishable key.
 
 ## Isi repository publik
 

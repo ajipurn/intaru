@@ -12,7 +12,7 @@
     "build": "pnpm data:prepare && pnpm build:app",
     "build:app": "tsc -b && vite build",
     "preview": "vite preview --host 127.0.0.1",
-    "test": "node --experimental-strip-types --test src/lib/geo.test.ts src/lib/map-symbols.test.ts src/lib/map-preferences.test.ts src/lib/location-results.test.ts src/lib/layers.test.ts src/lib/region-search.test.ts src/lib/facilities.test.ts src/lib/hazards.test.ts src/lib/region-view.test.ts scripts/export-apps-script.test.mjs scripts/display-geometry.test.mjs scripts/population.test.mjs",
+    "test": "node --experimental-strip-types --test src/lib/geo.test.ts src/lib/map-symbols.test.ts src/lib/map-preferences.test.ts src/lib/location-results.test.ts src/lib/layers.test.ts src/lib/region-search.test.ts src/lib/facilities.test.ts src/lib/hazards.test.ts src/lib/region-view.test.ts server/session.test.ts scripts/export-apps-script.test.mjs scripts/display-geometry.test.mjs scripts/population.test.mjs",
     "data:export": "node scripts/export-apps-script.mjs --all",
     "data:enrich": "node --experimental-strip-types scripts/export-enrichment.mjs",
     "data:prepare": "node --experimental-strip-types scripts/prepare-data.mjs && node --experimental-strip-types scripts/prepare-enrichment.mjs",
@@ -23,6 +23,7 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.0.0",
     "@tanstack/react-query": "^5.0.0",
+    "@vercel/functions": "^3.10.4",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.468.0",
     "react": "^19.0.0",

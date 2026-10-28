@@ -202,6 +202,8 @@ summary::-webkit-details-marker { display: none; }
 .app-footer { min-height: 30px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; gap: 12px; padding: 6px 24px; border-top: 1px solid var(--line); background: #fff; color: var(--muted); font-size: 11px; line-height: 1.5; }
 .app-footer > span { display: flex; align-items: center; gap: 16px; }
 .app-footer a { display: flex; align-items: center; gap: 4px; text-decoration: none; color: #53634f; }
+.app-footer form { display: contents; }
+.app-footer button { padding: 0; border: 0; background: none; color: #53634f; font-size: inherit; line-height: inherit; }
 .skip-link { position: fixed; z-index: 5000; left: 16px; top: -70px; background: var(--accent); color: #fff; padding: 12px; border-radius: 6px; }
 .skip-link:focus { top: 12px; }
 .modal-overlay { position: fixed; z-index: 2000; inset: 0; display: grid; place-items: center; background: #18221c66; padding: 24px; overflow: auto; overscroll-behavior: contain; }
@@ -212,7 +214,7 @@ summary::-webkit-details-marker { display: none; }
   .map-icon-button:hover, .basemap-button:hover, .legend-button:hover, .icon-button:hover, .clear-search:hover { background: #f4f6f1; }
   .layer-checkbox:hover, .hazard-option:hover, .search-result:hover { background: #edf2e9; }
   .layer-group summary:hover, .map-settings summary:hover { color: var(--accent); }
-  .coordinate-link:hover, .app-footer a:hover, .clear-filters:not([data-disabled]):hover { text-decoration: underline; text-underline-offset: 3px; }
+  .coordinate-link:hover, .app-footer a:hover, .app-footer button:hover, .clear-filters:not([data-disabled]):hover { text-decoration: underline; text-underline-offset: 3px; }
 }
 @media (prefers-reduced-motion:no-preference) {
   .spin { animation: spin 1s linear infinite; }

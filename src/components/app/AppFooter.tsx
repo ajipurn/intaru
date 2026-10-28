@@ -14,6 +14,10 @@ export function AppFooter({ data }: { data?: DataIndex }) {
           Sumber data
           <ArrowUpRight size={13} />
         </a>
+        {/* Handled by api/logout.ts on Vercel; local Vite has no sign-in. */}
+        <form method="post" action="/api/logout">
+          <button type="submit">Keluar</button>
+        </form>
       </span>
     </footer>
   );
