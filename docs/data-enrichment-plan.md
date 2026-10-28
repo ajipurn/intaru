@@ -1,6 +1,6 @@
 # Rencana pengayaan data INTARU
 
-Dicatat pada 27 Oktober 2026. Status: tahap pertama diimplementasikan pada 27 Oktober 2026; tahap kedua (luas BPS dan prakiraan cuaca BMKG) dan tahap ketiga (struktur ruang Portal Tata Ruang) pada 28 Oktober 2026. DEMNAS belum dapat diakses. Layer Portal Tata Ruang belum diimpor ke Supabase produksi, dan lisensinya masih perlu diperjelas ke DPUPR.
+Dicatat pada 27 Oktober 2026. Status: tahap pertama diimplementasikan pada 27 Oktober 2026; tahap kedua (luas BPS dan prakiraan cuaca BMKG) dan tahap ketiga (struktur ruang Portal Tata Ruang) pada 28 Oktober 2026. DEMNAS belum dapat diakses. Lisensi layer Portal Tata Ruang masih perlu diperjelas ke DPUPR.
 
 Pengayaan data ditujukan untuk memberi konteks tambahan pada peta tata ruang Kebumen: fasilitas sekitar lokasi, profil wilayah, dan potensi bahaya bencana. Prioritas awal yang disarankan adalah OpenStreetMap, data penduduk Kebumen, lalu InaRISK.
 
@@ -53,7 +53,8 @@ Struktur ruang Portal Tata Ruang Kebumen diintegrasikan pada 28 Oktober 2026:
 - **Tahun data.** `SBDATA` per fitur berkisar 2018–2023: Kominfo dan PT Telkom 2019/2022, Kementerian ESDM 2020–2022, BPBD 2021–2022, PDAM 2022, Bina Marga DPUPR 2023, dan analisis tim teknis revisi RTRW 2019–2023. Tahun diambil sebagai tahun terakhir yang tidak melewati tahun ekspor, sehingga horizon rencana seperti 2009–2029 tidak terbaca sebagai 2029.
 - **Tampilan.** 40 kategori `NAMOBJ` memiliki simbol sendiri; tidak ada fitur yang jatuh ke klasifikasi belum tersedia. Titik digambar sebagai lingkaran canvas berukuran sesuai hierarki, dan jaringan sekunder digambar putus-putus. Titik dan garis berada pada pane tersendiri dengan toleransi klik 5 piksel. Informasi lokasi menampilkan jenis dan nama (`REMARK`) fitur yang diklik.
 - **Atribusi dan lisensi.** Legenda dan informasi lokasi menyebut Portal Tata Ruang Kabupaten Kebumen dan Bidang Tata Ruang dan Pertanahan DPUPR, serta menyatakan bahwa lisensi belum dicantumkan. Izin atau lisensi tertulis perlu diminta ke dpupr.kebumenkab@gmail.com.
-- **Belum dikerjakan.** Impor ke Supabase produksi (`pnpm data:import:tataruang`) menunggu persetujuan; sampai itu dilakukan, deployment mode Supabase belum menampilkan layer baru. `SBDATA` per fitur belum ditampilkan karena tidak termasuk atribut salinan tampilan.
+- **Supabase.** `pnpm data:import:tataruang` dijalankan pada 28 Oktober 2026: 10 baris `map_layers` (`sort_order` 29–38, `imported_at` = waktu pengambilan per layer) dan 5.131 baris `map_features`, tanpa migration dan tanpa menyentuh layer lain, desa, maupun mask.
+- **Belum dikerjakan.** Izin atau lisensi dari DPUPR. `SBDATA` per fitur belum ditampilkan karena tidak termasuk atribut salinan tampilan.
 
 Target awal:
 
