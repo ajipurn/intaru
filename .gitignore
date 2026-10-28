@@ -1,0 +1,43 @@
+# Dependencies and build output
+/node_modules/
+/dist/
+/.pnpm-store/
+*.tsbuildinfo
+*.log
+
+# Local environment and credentials; keep only the empty template
+.env
+.env.*
+!.env.example
+*.local
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Source exports and generated datasets (including metadata and map snapshots)
+/data/
+/public/data/
+
+# Database backups and local Supabase state; SQL migrations remain versioned
+/backup/
+/backups/
+/dumps/
+*.dump
+*.sql.gz
+*.sqlite
+*.sqlite3
+*.db
+/supabase/.temp/
+/supabase/.branches/
+
+# Local tooling, generated artifacts, and internal audit notes
+/.openai/
+/.claude/
+/.codex/
+/.vercel/
+/.sites-runtime/
+/artifacts/
+/docs/source-audit.md
+/docs/performance.md
+.DS_Store
