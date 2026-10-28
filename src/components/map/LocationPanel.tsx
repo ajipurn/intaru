@@ -2,26 +2,28 @@ import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "react-aria-components";
 import { ArrowUpRight, MapPin } from "lucide-react";
+import { useRegionAt } from "../../hooks/use-region-at";
 import { identifyQuery } from "../../lib/data";
 import { getLocationResults } from "../../lib/location-results";
 import type { Basemap } from "../../lib/map-symbols";
 import type { Layer, SelectedPoint } from "../../types";
 import { PanelHeading } from "../ui/PanelHeading";
 import { Spinner } from "../ui/Spinner";
-import { DistrictSummary, NearbyFacilities } from "./LocationEnrichment";
+import { NearbyFacilities, RegionSummary, WeatherForecast } from "./LocationEnrichment";
 import { MapSwatch } from "./MapSwatch";
 
 /** Identifies the clicked point against the active layers. */
-export function LocationPanel({ point, layers, regionLayer, base, opacity, onClose }: {
+export function LocationPanel({ point, layers, regionLayers, base, opacity, onClose }: {
   point: SelectedPoint;
   layers: Layer[];
-  /** District boundaries, used for the population summary even when the layer is off. */
-  regionLayer?: Layer;
+  /** District and village boundaries, used for the region summary even when the layers are off. */
+  regionLayers: Layer[];
   base: Basemap;
   opacity: number;
   onClose: () => void;
 }) {
   const identification = useQuery(identifyQuery(point, layers, true));
+  const region = useRegionAt(point, regionLayers);
   const matches = identification.data ?? [];
   const results = useMemo(
     () => {
@@ -74,7 +76,8 @@ export function LocationPanel({ point, layers, regionLayer, base, opacity, onClo
           </p>
         )}
       </div>
-      <DistrictSummary point={point} regionLayer={regionLayer} />
+      {regionLayers.length > 0 && <RegionSummary region={region} />}
+      <WeatherForecast village={region.village} />
       <NearbyFacilities point={point} />
       <a
         className="coordinate-link"

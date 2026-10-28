@@ -19,7 +19,10 @@ export type Village = { DESAKEL: string; KECAMATAN: string };
 export type DataIndex = { sourceUrl: string; exportedAt: string; layers: Layer[] };
 export type SearchResult = { kind: 'district' | 'village'; name: string; district: string };
 export type LocationMatch = { layer_id: string; layer_name: string; properties: GeoJsonProperties };
-export type DistrictPopulation = { code: string; district: string; year: number; population: number; publisher: string; source_url: string; retrieved_at: string };
+export type DistrictPopulation = {
+  code: string; district: string; year: number; population: number; publisher: string; source_url: string; retrieved_at: string;
+  area_km2?: number | null; area_year?: number | null; area_publisher?: string | null; area_source_url?: string | null;
+};
 export type LayerStatus = 'loading' | 'ready' | 'error';
 export type LayerStatusMap = Record<string, LayerStatus>;
 export type SelectedPoint = Point & { clicked?: LocationMatch };

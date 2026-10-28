@@ -42,7 +42,7 @@ pnpm preview
 - Peta, sidebar, legenda, dan informasi lokasi memakai definisi simbol yang sama di `src/lib/map-symbols.ts`. Layer multikategori memiliki indikator beragam warna dan rincian kategori dari fitur yang dimuat; sampel mengikuti jenis garis/area, peta dasar, dan opasitas.
 - Identifikasi kawasan pada layer aktif melalui indeks spasial PostGIS; mode snapshot memeriksa geometri asli di worker. Untuk jalan, klik garisnya untuk melihat atribut.
 - Informasi lokasi menampilkan nama kawasan sekali, menormalkan awalan kecamatan, dan menggabungkan hasil yang identik. Setiap hasil memiliki simbol sesuai layer dan klasifikasinya, termasuk garis transportasi; klasifikasi atau kecamatan yang berbeda tetap ditampilkan terpisah.
-- Informasi lokasi juga menampilkan kecamatan titik beserta jumlah penduduk 2025 (Disdukcapil Kebumen) dan hingga delapan fasilitas umum OpenStreetMap dalam radius 1,5 km. Pencarian kecamatan menampilkan jumlah penduduknya.
+- Informasi lokasi juga menampilkan desa/kelurahan dan kecamatan titik beserta jumlah penduduk 2025 (Disdukcapil Kebumen), luas dan kepadatan (BPS Kebumen), prakiraan cuaca BMKG beberapa jam ke depan, dan hingga delapan fasilitas umum OpenStreetMap dalam radius 1,5 km. Pencarian kecamatan menampilkan jumlah penduduknya.
 - Overlay bahaya banjir, tanah longsor, atau tsunami dari InaRISK BNPB, terpisah dari layer tata ruang, dengan legenda indeks 0–1. Tile digambar pada canvas yang dipotong mengikuti mask Kebumen, sehingga indeks berhenti di batas kabupaten.
 - Sidebar desktop dan panel mobile, keyboard, serta modal React Aria dengan pengembalian fokus.
 
@@ -77,6 +77,8 @@ Exporter hanya mengizinkan fungsi baca publik yang diamati. Tidak memanggil veri
 ```sh
 # Unduh sumber mentah ke data/enrichment/ beserta manifest (URL, waktu, SHA-256, lisensi).
 pnpm data:enrich
+# Atau hanya sebagian sumber: penduduk, fasilitas, luas.
+pnpm data:enrich luas
 
 # Olah ke public/data/enrichment/ (juga dijalankan oleh pnpm build).
 pnpm data:prepare
@@ -85,6 +87,8 @@ pnpm data:prepare
 | Data | Sumber | Catatan |
 | --- | --- | --- |
 | Penduduk per kecamatan 2025 | [Open Data Kebumen](https://opendata.kebumenkab.go.id/en/dataset/jumlah-penduduk-per-kecamatan-tahun-2025-e15fce), Disdukcapil | XLSX menyimpan pemisah ribuan sebagai desimal (69.01 = 69.010 jiwa). Nilai dipulihkan lalu wajib berjumlah sama dengan total lembar (1.453.417). Kode Kemendagri dicocokkan dengan nama kecamatan di batas desa sebelum digabung. Dataset tidak mencantumkan lisensi. |
+| Luas kecamatan 2025 | [BPS Kebumen](https://kebumenkab.bps.go.id/id/statistics-table/3/VUZwV01tSlpPVlpsWlRKbmMxcFhhSGhEVjFoUFFUMDkjMw==/luas-daerah-dan-jumlah-pulau-menurut-kecamatan-di-kabupaten-kebumen--2024.html?year=2025), Podes | Tabel dibaca dari payload halaman; wajib berjumlah sama dengan total 1.281,12 km². Dicocokkan dengan nama kecamatan karena kode BPS berbeda dari Kemendagri. Boleh digunakan ulang dengan menyebut BPS. |
+| Prakiraan cuaca | [BMKG](https://data.bmkg.go.id/prakiraan-cuaca/) | Dipanggil langsung dari browser per desa memakai kode `KDEPUM` batas desa; tiga hari per tiga jam, cache 30 menit. Atribusi BMKG wajib. |
 | Fasilitas umum | OpenStreetMap melalui Overpass API | 577 fasilitas setelah dipotong ke batas kecamatan dan 40 duplikat (nama dan jenis sama dalam 300 m) dihapus. Kelengkapan sangat timpang: Kebumen 110 fasilitas, sementara Padureso dan Karangsambung masing-masing 1. Lisensi ODbL; atribusi tampil di panel. |
 | Indeks bahaya | [InaRISK BNPB](https://gis.bnpb.go.id/server/rest/services/inarisk) | Gambar `exportImage` dimuat langsung per tile di dalam bounds Kebumen, resolusi 100 m. Layanan tidak mencantumkan tahun, lisensi, maupun kelas legenda; antarmuka menyatakan hal itu dan memakai gradasi warna layanan. |
 

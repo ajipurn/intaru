@@ -32,6 +32,25 @@ function districtLabel(value: string) {
   return name ? `Kecamatan ${name}` : undefined;
 }
 
+export type Region = {
+  /** District name as in the boundary layer, without the "Kecamatan" prefix. */
+  district?: string;
+  village?: { name: string; kind: 'Desa' | 'Kelurahan'; code?: string };
+};
+
+/** District and village containing a point, from an identification of both boundary layers. */
+export function regionAt(matches: LocationMatch[]): Region {
+  const districtMatch = matches.find((match) => match.layer_name === DISTRICT_LAYER)?.properties;
+  const villageMatch = matches.find((match) => match.layer_name === VILLAGE_LAYER)?.properties;
+  const district = property(districtMatch ?? null, ['KECAMATAN', 'WADMKC']) || property(villageMatch ?? null, ['WADMKC']);
+  const villageName = property(villageMatch ?? null, ['WADMKD', 'DESAKEL']);
+  const code = property(villageMatch ?? null, ['KDEPUM']);
+  return {
+    district: districtLabel(district)?.replace(/^Kecamatan /, ''),
+    village: villageName ? { name: villageName, kind: villageMatch?.TIPADM === 2 ? 'Kelurahan' : 'Desa', code: code || undefined } : undefined,
+  };
+}
+
 export function getLocationResults(matches: LocationMatch[], base: Basemap = 'streets'): LocationResult[] {
   const seen = new Set<string>();
   const results: LocationResult[] = [];

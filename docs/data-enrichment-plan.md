@@ -1,6 +1,6 @@
 # Rencana pengayaan data INTARU
 
-Dicatat pada 27 Oktober 2026. Status: tahap pertama diimplementasikan pada 27 Oktober 2026; sumber lanjutan belum.
+Dicatat pada 27 Oktober 2026. Status: tahap pertama diimplementasikan pada 27 Oktober 2026; tahap kedua (luas BPS dan prakiraan cuaca BMKG) pada 28 Oktober 2026. DEMNAS belum dapat diakses dan layer Portal Tata Ruang belum diintegrasikan.
 
 Pengayaan data ditujukan untuk memberi konteks tambahan pada peta tata ruang Kebumen: fasilitas sekitar lokasi, profil wilayah, dan potensi bahaya bencana. Prioritas awal yang disarankan adalah OpenStreetMap, data penduduk Kebumen, lalu InaRISK.
 
@@ -31,14 +31,24 @@ Status implementasi dan temuan pemeriksaan sumber:
 
 - **OpenStreetMap.** Diambil melalui Overpass API, bukan unduhan Geofabrik Jawa (sekitar 1 GB), dengan User-Agent yang mengidentifikasi aplikasi; tanpa itu server menolak dengan HTTP 406. Hasilnya 577 fasilitas dalam enam kategori setelah pemotongan ke batas kecamatan dan penghapusan 40 duplikat. Kelengkapan sangat timpang antarkecamatan, dan sejumlah puskesmas ditandai sebagai rumah sakit sehingga labelnya dikoreksi dari nama.
 - **Open Data Kebumen.** Tersedia sebagai XLSX tanpa datastore dan tanpa lisensi (`license_id: null`). Angka per kecamatan tersimpan sebagai desimal karena pemisah ribuan; nilai dipulihkan dan divalidasi terhadap total 1.453.417. Kode Kemendagri (33.05.xx) cocok dengan nama di layer batas desa untuk semua 26 kecamatan. Kepadatan belum dihitung karena luas resmi belum dicocokkan.
-- **InaRISK.** Layer `layer_bahaya_*` berupa ImageServer indeks 0–1, resolusi 100 m, tanpa cache tile, tahun, lisensi, maupun label kelas. Overlay memakai `exportImage` per tile di sekitar Kebumen. Hanya satu bahaya ditampilkan sekaligus.
-- **Supabase.** Migration `202610280001_enrichment.sql` dan `pnpm data:import:enrichment` sudah disiapkan tetapi belum diterapkan ke project. Sampai itu, aplikasi memakai snapshot statis.
-- **Belum dikerjakan.** Ketentuan penggunaan ulang data penduduk dan InaRISK masih perlu diperjelas ke penerbitnya. Sumber lanjutan (BPS, DEMNAS, Portal Tata Ruang, BMKG) belum diintegrasikan.
+- **InaRISK.** Layer `layer_bahaya_*` berupa ImageServer indeks 0–1, resolusi 100 m, tanpa cache tile, tahun, lisensi, maupun label kelas. Overlay memakai `exportImage` per tile di dalam bounds Kebumen dan dipotong mengikuti mask kabupaten. Hanya satu bahaya ditampilkan sekaligus.
+- **Supabase.** Migration `202610280001_enrichment.sql` diterapkan dan `pnpm data:import:enrichment` dijalankan pada 28 Oktober 2026. Snapshot statis hanya dipakai jika tabel belum ada.
+- **Belum dikerjakan.** Ketentuan penggunaan ulang data penduduk dan InaRISK masih perlu diperjelas ke penerbitnya.
+
+## Hasil tahap kedua
+
+Sampel diambil pada 28 Oktober 2026:
+
+- **BPS Kebumen: diintegrasikan.** Tabel "Luas Daerah dan Jumlah Pulau Menurut Kecamatan di Kabupaten Kebumen, 2025" (sumber Podes) dapat diambil tanpa login, tetapi hanya jika parameter `?year=2025` disertakan. Tabelnya tersimpan sebagai JSON di payload Next.js halaman (`scripts/bps-table.mjs`). Kode BPS (3305010) berbeda dari kode Kemendagri (33.05.01), sehingga luas dicocokkan dengan nama kecamatan, dan jumlah 26 kecamatan wajib sama dengan total yang diterbitkan (1.281,12 km²). Luas geodesik poligon batas sekitar 4% lebih besar, jadi kepadatan memakai angka resmi BPS: 449–3.274 jiwa/km², rata-rata kabupaten 1.134. [Ketentuan BPS](https://kebumenkab.bps.go.id/id/term-of-use) mengizinkan penggunaan ulang, termasuk komersial, dengan menyebut BPS sebagai sumber. Kolom luas disimpan di `district_population` (migration `202610280003_district_area.sql`).
+- **BMKG: diintegrasikan.** API `api.bmkg.go.id/publik/prakiraan-cuaca?adm4=` mengizinkan semua origin (CORS `*`) dan memberi `Cache-Control: max-age=3600`, sehingga dipanggil langsung dari browser tanpa proxy. Kode tingkat IV sama dengan atribut `KDEPUM` pada 460 desa/kelurahan di layer batas desa. Respons berisi prakiraan tiga hari per tiga jam. Panel informasi lokasi menampilkan empat slot berikutnya dengan atribusi BMKG; TanStack Query menyimpan hasil 30 menit, jauh di bawah batas 60 permintaan per menit per IP.
+- **DEMNAS: belum dapat dipakai.** Metadata layanan dapat dibaca (piksel sekitar 8 m, Float32, datum vertikal EGM2008), tetapi `identify` dan `getSamples` menjawab galat 500 setelah 60 detik, dan `exportImage`, bahkan 10×10 piksel, tidak menjawab dalam 60–120 detik. Elevasi dan kemiringan perlu menunggu layanan pulih, atau memakai DEM terbuka lain yang lisensinya diperiksa terlebih dahulu.
+- **Portal Tata Ruang Kebumen: layak dengan catatan, belum diintegrasikan.** Portal memakai Leaflet dengan GeoJSON per layer di `index.php/peta/geojson/{kecamatan|pola|struktur}/{id}`, tanpa CORS dan tanpa ketentuan penggunaan tertulis (pemilik: Bidang Tata Ruang dan Pertanahan DPUPR Kebumen). Data harus diunduh saat persiapan dan disajikan sendiri. Layer struktur ruang yang belum ada di INTARU: infrastruktur dan jaringan energi, sumber daya air, telekomunikasi, prasarana lainnya, serta sistem pusat permukiman. Sebagian berupa titik dengan koordinat 4D yang harus dipangkas ke 2D. Integrasinya memerlukan dukungan simbol layer titik dan izin atau atribusi dari DPUPR.
 
 Target awal:
 
 - Pengguna dapat melihat fasilitas umum di sekitar titik yang dipilih.
-- Pemilihan kecamatan menampilkan jumlah penduduk beserta sumber dan tahunnya. Kepadatan dihitung setelah luas dan batas wilayah yang digunakan cocok dengan statistik.
+- Pemilihan kecamatan menampilkan jumlah penduduk beserta sumber dan tahunnya. Kepadatan dihitung dari luas resmi BPS, karena luas poligon batas berbeda sekitar 4%.
+- Panel informasi lokasi menampilkan desa/kelurahan titik dan prakiraan cuaca BMKG beberapa jam ke depan.
 - Pengguna dapat menyalakan overlay bahaya InaRISK dengan legenda dan tahun data, terpisah dari layer rencana tata ruang.
 
 Ukuran keberhasilan mencakup ketepatan cakupan Kebumen, kecocokan kode wilayah, keterlacakan sumber, serta perbandingan waktu muat dan respons peta sebelum dan setelah integrasi.

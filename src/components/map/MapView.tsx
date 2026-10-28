@@ -41,10 +41,10 @@ function MapContext({ focus }: { focus: MapFocus }) {
   );
 }
 
-export function MapView({ layers, regionLayer, preferences, actions, focus, onReset, onOpenTools, onStatus }: {
+export function MapView({ layers, regionLayers, preferences, actions, focus, onReset, onOpenTools, onStatus }: {
   /** The selected layers, in catalogue order. */
   layers: Layer[];
-  regionLayer?: Layer;
+  regionLayers: Layer[];
   preferences: MapPreferences;
   actions: MapPreferenceActions;
   focus: MapFocus | null;
@@ -145,7 +145,7 @@ export function MapView({ layers, regionLayer, preferences, actions, focus, onRe
         />
       )}
       {point && inspect && (
-        <LocationPanel point={point} layers={layers} regionLayer={regionLayer} base={base} opacity={opacity} onClose={() => setPoint(null)} />
+        <LocationPanel point={point} layers={layers} regionLayers={regionLayers} base={base} opacity={opacity} onClose={() => setPoint(null)} />
       )}
     </div>
   );

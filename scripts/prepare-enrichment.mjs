@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { gunzipSync, gzipSync } from 'node:zlib';
 import { classifyFacility, dedupeFacilities } from '../src/lib/facilities.ts';
 import { containsPoint, normalize } from '../src/lib/geo.ts';
+import { bpsColumn, bpsTableFromHtml } from './bps-table.mjs';
 import { populationFromRows, readXlsxRows } from './population.mjs';
 
 const RAW = 'data/enrichment';
@@ -52,6 +53,21 @@ const population = rows.map((row) => {
   };
 });
 if (population.length !== districts.length) throw new Error(`Population covers ${population.length} of ${districts.length} districts.`);
+
+// Official area from BPS. Its codes (3305010) differ from Kemendagri's, so match by name
+// and require the districts to add up to the regency total BPS publishes.
+const areaSource = source('bps-luas-kecamatan.html');
+const areaRows = bpsColumn(bpsTableFromHtml(await readFile(join(RAW, areaSource.file), 'utf8')), 'Luas Wilayah');
+const total = areaRows.find((row) => row.code === '3305000');
+const areaByName = new Map(areaRows.filter((row) => row !== total).map((row) => [normalize(row.name), row.value]));
+const areaSum = [...areaByName.values()].reduce((sum, value) => sum + value, 0);
+if (!total || Math.abs(areaSum - total.value) > 0.005) throw new Error(`BPS district areas add up to ${areaSum.toFixed(2)} km², not the published ${total?.value} km².`);
+for (const row of population) {
+  const area = areaByName.get(normalize(row.district));
+  if (area === undefined) throw new Error(`BPS lists no area for ${row.district}.`);
+  Object.assign(row, { area_km2: area, area_year: areaSource.year, area_publisher: areaSource.publisher, area_source_url: areaSource.source });
+}
+if (areaByName.size !== population.length) throw new Error(`BPS lists ${areaByName.size} districts, population ${population.length}.`);
 await writeFile(join(OUTPUT, 'population.json'), JSON.stringify(population) + '\n');
 
 // Facilities, clipped to the regency and tagged with their district.

@@ -2,6 +2,8 @@ import { createClient } from '@supabase/supabase-js';
 import type { PostgrestError, SupabaseClient } from '@supabase/supabase-js';
 import { queryOptions } from '@tanstack/react-query';
 import type { NearbyFacility } from './facilities';
+import { forecastUrl, isVillageCode } from './weather';
+import type { ForecastResponse } from './weather';
 import type { DataIndex, DistrictPopulation, GeoData, Layer, LocationMatch, Point, Village } from '../types';
 
 const url = import.meta.env.VITE_SUPABASE_URL?.trim();
@@ -92,6 +94,16 @@ export function nearbyFacilitiesQuery(point: Point | null) {
       );
     },
     staleTime: 5 * 60_000,
+  });
+}
+
+// Fetched straight from BMKG, which allows any origin and caches for an hour.
+export function weatherQuery(code: string | undefined) {
+  return queryOptions({
+    queryKey: ['weather', code],
+    enabled: isVillageCode(code),
+    queryFn: ({ signal }) => getJSON<ForecastResponse>(forecastUrl(code!), signal),
+    staleTime: 30 * 60_000,
   });
 }
 

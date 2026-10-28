@@ -1,39 +1,92 @@
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "react-aria-components";
 import { useDistrictPopulation } from "../../hooks/use-district-population";
-import { FACILITY_RADIUS, identifyQuery, nearbyFacilitiesQuery } from "../../lib/data";
+import type { RegionState } from "../../hooks/use-region-at";
+import { FACILITY_RADIUS, nearbyFacilitiesQuery, weatherQuery } from "../../lib/data";
 import { FACILITY_CATEGORIES, formatDistance } from "../../lib/facilities";
-import type { Layer, Point } from "../../types";
+import { BMKG_SOURCE_URL, formatSlotTime, upcomingSlots } from "../../lib/weather";
+import type { Point } from "../../types";
 import { Spinner } from "../ui/Spinner";
 
-/** District of the selected point with its population, independent of the active layers. */
-export function DistrictSummary({ point, regionLayer }: { point: Point; regionLayer?: Layer }) {
-  const region = useQuery(identifyQuery(point, regionLayer ? [regionLayer] : [], Boolean(regionLayer)));
-  const properties = region.data?.[0]?.properties;
-  const district = properties ? String(properties.KECAMATAN ?? properties.WADMKC ?? "") || undefined : undefined;
-  const population = useDistrictPopulation(district);
-  if (!regionLayer) return null;
+/** District and village of the selected point with population and density, independent of the active layers. */
+export function RegionSummary({ region }: { region: RegionState }) {
+  const population = useDistrictPopulation(region.district);
+  const area = population?.area_km2;
   return (
     <section className="location-section" aria-label="Wilayah">
       <h3>Wilayah</h3>
-      {region.isFetching && !region.data ? (
+      {region.pending ? (
         <p className="identifying" role="status">
           <Spinner size={14} />
-          Mencari kecamatan…
+          Mencari wilayah…
         </p>
-      ) : district ? (
+      ) : region.district ? (
         <>
-          <p className="district-name">Kecamatan {district}</p>
+          <p className="district-name">
+            {region.village && `${region.village.kind} ${region.village.name}, `}Kecamatan {region.district}
+          </p>
           {population && (
             <p>
               {population.population.toLocaleString("id-ID")} jiwa pada {population.year}
-              <small className="source-note">Sumber: {population.publisher}</small>
+              {area && (
+                <>
+                  <br />
+                  Luas {area.toLocaleString("id-ID")} km² · {Math.round(population.population / area).toLocaleString("id-ID")} jiwa/km²
+                </>
+              )}
+              <small className="source-note">
+                Sumber: penduduk {population.publisher}
+                {area && `; luas ${population.area_publisher} ${population.area_year}`}
+              </small>
             </p>
           )}
         </>
       ) : (
-        <p>{region.isError ? "Kecamatan belum dapat diperiksa." : "Titik berada di luar batas kecamatan Kebumen."}</p>
+        <p>{region.failed ? "Wilayah belum dapat diperiksa." : "Titik berada di luar batas kecamatan Kebumen."}</p>
       )}
+    </section>
+  );
+}
+
+/** Next BMKG forecast slots for the selected village. */
+export function WeatherForecast({ village }: { village: RegionState["village"] }) {
+  const forecast = useQuery(weatherQuery(village?.code));
+  if (!village?.code) return null;
+  const slots = forecast.data ? upcomingSlots(forecast.data) : [];
+  const timeZone = forecast.data?.lokasi?.timezone;
+  return (
+    <section className="location-section" aria-label="Prakiraan cuaca">
+      <h3>Prakiraan cuaca</h3>
+      {forecast.isPending && (
+        <p className="identifying" role="status">
+          <Spinner size={14} />
+          Memuat prakiraan…
+        </p>
+      )}
+      {forecast.isError && (
+        <div role="alert">
+          <p>Prakiraan cuaca belum dapat dimuat.</p>
+          <Button className="text-button" onPress={() => void forecast.refetch()}>
+            Coba lagi
+          </Button>
+        </div>
+      )}
+      {forecast.data && !slots.length && <p>Prakiraan untuk waktu ini belum tersedia.</p>}
+      {slots.length > 0 && (
+        <ul className="weather-list">
+          {slots.map((slot) => (
+            <li key={slot.datetime}>
+              <span className="weather-time">{formatSlotTime(slot, timeZone)}</span>
+              <img src={slot.image} alt="" width={22} height={22} loading="lazy" />
+              <span className="weather-desc">{slot.weather_desc}</span>
+              <span className="weather-temp">{slot.t}°C</span>
+            </li>
+          ))}
+        </ul>
+      )}
+      <small className="source-note">
+        Sumber: <a href={BMKG_SOURCE_URL} target="_blank" rel="noreferrer">BMKG</a>, prakiraan {village.kind.toLowerCase()} {village.name}
+      </small>
     </section>
   );
 }

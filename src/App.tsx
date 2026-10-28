@@ -11,7 +11,7 @@ import { useMediaQuery } from "./hooks/use-media-query";
 import { useRegionSearch } from "./hooks/use-region-search";
 import { indexQuery } from "./lib/data";
 import { pickLayers } from "./lib/layers";
-import { DISTRICT_LAYER } from "./lib/map-symbols";
+import { DISTRICT_LAYER, VILLAGE_LAYER } from "./lib/map-symbols";
 import type { Layer, LayerStatusMap, MapFocus, MapFocusTarget } from "./types";
 
 // Matches the 900px breakpoint in styles.css.
@@ -23,7 +23,7 @@ export default function App() {
   const layers = index.data?.layers ?? emptyLayers;
   const [preferences, actions] = useMapPreferences();
   const selectedLayers = useMemo(() => pickLayers(layers, preferences.layers), [layers, preferences.layers]);
-  const regionLayer = layers.find((layer) => layer.name === DISTRICT_LAYER);
+  const regionLayers = useMemo(() => layers.filter((layer) => layer.name === DISTRICT_LAYER || layer.name === VILLAGE_LAYER), [layers]);
   const wide = useMediaQuery(WIDE_LAYOUT);
   const [toolsOpen, setToolsOpen] = useState(false);
   const [focus, setFocus] = useState<MapFocus | null>(null);
@@ -70,7 +70,7 @@ export default function App() {
           <Deferred label="Menyiapkan peta Kebumen…">
             <MapView
               layers={selectedLayers}
-              regionLayer={regionLayer}
+              regionLayers={regionLayers}
               preferences={preferences}
               actions={actions}
               focus={focus}

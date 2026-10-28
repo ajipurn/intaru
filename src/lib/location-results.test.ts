@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { getLocationResults } from './location-results.ts';
-import { TRANSPORT_LAYER } from './map-symbols.ts';
+import { getLocationResults, regionAt } from './location-results.ts';
+import { DISTRICT_LAYER, TRANSPORT_LAYER, VILLAGE_LAYER } from './map-symbols.ts';
 import type { LocationMatch } from '../types.ts';
 
 const crop: LocationMatch = { layer_id: 'tanaman-pangan', layer_name: 'Kawasan Tanaman Pangan', properties: { NAMOBJ: 'Kawasan Tanaman Pangan', WADMKC: 'Kecamatan Kebumen' } };
@@ -80,4 +80,13 @@ test('missing properties do not create empty or repeated detail lines', () => {
   const [result] = getLocationResults([{ ...crop, properties: null }]);
   assert.equal(result.detail, undefined);
   assert.equal(result.district, undefined);
+});
+
+test('the region of a point combines the district and village boundaries', () => {
+  const district: LocationMatch = { layer_id: 'kec', layer_name: DISTRICT_LAYER, properties: { KECAMATAN: 'Prembun' } };
+  const village: LocationMatch = { layer_id: 'desa', layer_name: VILLAGE_LAYER, properties: { WADMKD: 'Pecarikan', WADMKC: 'Prembun', KDEPUM: '33.05.09.2012', TIPADM: 1 } };
+  assert.deepEqual(regionAt([village, district]), { district: 'Prembun', village: { name: 'Pecarikan', kind: 'Desa', code: '33.05.09.2012' } });
+  const kelurahan = { ...village, properties: { ...village.properties, WADMKD: 'Wonokriyo', WADMKC: 'Kecamatan Gombong', TIPADM: 2 } };
+  assert.deepEqual(regionAt([kelurahan]), { district: 'Gombong', village: { name: 'Wonokriyo', kind: 'Kelurahan', code: '33.05.09.2012' } });
+  assert.deepEqual(regionAt([]), { district: undefined, village: undefined });
 });

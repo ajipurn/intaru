@@ -190,6 +190,12 @@ summary::-webkit-details-marker { display: none; }
 .facility-list strong { display: block; font-size: 13px; font-weight: 600; color: #36483b; }
 .facility-list small { display: block; font-size: 12px; }
 .facility-distance { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.weather-list { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.weather-list li { display: grid; grid-template-columns: 64px 22px minmax(0,1fr) auto; align-items: center; gap: 8px; }
+.weather-time { font-variant-numeric: tabular-nums; }
+.weather-desc { overflow-wrap: anywhere; color: #36483b; }
+.weather-temp { font-size: 13px; font-weight: 600; color: #36483b; font-variant-numeric: tabular-nums; }
+.source-note a { color: inherit; }
 .coordinate-link { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 12px; text-decoration: none; color: var(--accent); margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--line); min-height: 44px; }
 .text-button { color: var(--accent); border: 0; background: transparent; padding: 8px 0; font-size: 12px; text-decoration: underline; text-underline-offset: 3px; }
 .map-loading, .catalog-status { position: absolute; left: 16px; top: 16px; display: flex; align-items: center; gap: 8px; padding: 12px; background: #fff; color: #3e5144; box-shadow: var(--panel-shadow); border-radius: 6px; font-size: 12px; max-width: calc(100% - 270px); z-index: 600; }
