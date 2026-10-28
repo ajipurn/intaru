@@ -1,4 +1,4 @@
-import { createSession, passwordMatches, sessionCookie } from '../server/session.ts';
+import { createSession, passwordMatches, sessionCookie } from '../server/session.js';
 
 const redirect = (location: string, cookie?: string) =>
   new Response(null, { status: 303, headers: { Location: location, ...(cookie && { 'Set-Cookie': cookie }) } });

@@ -1,8 +1,9 @@
 import { next } from '@vercel/functions';
-import { readCookie, SESSION_COOKIE, sessionValid } from './server/session.ts';
+import { readCookie, SESSION_COOKIE, sessionValid } from './server/session.js';
 
 // Every page and asset needs a session, except the login page, its form handler and the icon.
-export const config = { matcher: '/((?!login|api/login|favicon\\.svg).*)' };
+// Node.js, not Edge: the session check uses node:crypto.
+export const config = { matcher: '/((?!login|api/login|favicon\\.svg).*)', runtime: 'nodejs' };
 
 export default function middleware(request: Request) {
   const password = process.env.INTARU_PASSWORD;
